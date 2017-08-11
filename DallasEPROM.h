@@ -211,6 +211,14 @@ public:
 	 * @return True if locked.
 	 */
 	bool isAppRegLocked();
+	
+	
+	cpyLockApplicationReg(void);
+		/**
+	 * Lock the application register DS2430.
+	 *
+	 */
+	int 
 
 private:
 	OneWire* _wire;  // Pointer to OneWire v2.2 instance

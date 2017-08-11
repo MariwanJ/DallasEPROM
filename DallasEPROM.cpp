@@ -137,7 +137,8 @@ int DallasEPROM::readPage(uint8_t* data, int page) {
 		_wire->select(_addr);
 		_wire->write(command[0]);
 		_wire->write(command[1]);
-		_wire->write(command[2]);
+		if (_curModel->name != "DS2430")
+			_wire->write(command[2]);
 
 		if (OneWire::crc8(command, 3) != _wire->read())
 			return CRC_MISMATCH;
@@ -197,7 +198,8 @@ int DallasEPROM::writePage(uint8_t* data, int page) {
 	_wire->select(_addr);
 	_wire->write(command[0]);
 	_wire->write(command[1]);
-	_wire->write(command[2]);
+	if (_curModel->name != "DS2430")
+	  _wire->write(command[2]);
 	_wire->write(command[3]);
 
 	// Check CRC
@@ -254,7 +256,8 @@ int DallasEPROM::lockPage(int page) {
 
 		_wire->write(command[0]);
 		_wire->write(command[1]);
-		_wire->write(command[2]);
+		if (_curModel->name != "DS2430")
+		  _wire->write(command[2]);
 		_wire->write(command[3]);
 
 		// Check CRC
@@ -296,7 +299,8 @@ bool DallasEPROM::isPageLocked(int page) {
 		byte command[] = { READSTATUS, 0x00, 0x00 };
 		_wire->write(command[0]);
 		_wire->write(command[1]);
-		_wire->write(command[2]);
+		if (_curModel->name != "DS2430")
+		  _wire->write(command[2]);
 
 		// Check CRC on EPROM devices
 		if (OneWire::crc8(command, 3) != _wire->read())
@@ -340,6 +344,8 @@ int DallasEPROM::readAppReg(uint8_t* data) {
 }
 
 int DallasEPROM::writeAppReg(uint8_t* data) {
+	// Write the application register. 
+	//You need to verify the data written to the reg. using readAppReg, and run cpyLockApplicationReg
 	if (!isConnected())
 		return DEVICE_DISCONNECTED;
 	if (_curModel->name != "DS2430")
@@ -357,17 +363,29 @@ int DallasEPROM::writeAppReg(uint8_t* data) {
 	for (int i = 0; i < 8; i++) {
 		_wire->write(data[i]);
 	}
+//This part is dangours. Keep it away from this function and make another function.
+	//_wire->reset();
+	//_wire->select(_addr);
+	//_wire->write(COPYLOCK);
+	//_wire->write(VERIFYRESUME);
+	// Need 10ms prog delay
+	//delay(10);
 
+	return 0;
+}
+void DallasEPROM::cpyLockApplicationReg(void){
+	
+	/*This part is dangours. Keep it away from this function and make another function.
+		Verify the code before running this function. It is only one-times programming
+	
+	*/
 	_wire->reset();
 	_wire->select(_addr);
 	_wire->write(COPYLOCK);
 	_wire->write(VERIFYRESUME);
 	// Need 10ms prog delay
-	delay(10);
-
-	return 0;
+	delay(10);	
 }
-
 bool DallasEPROM::isAppRegLocked() {
 	if (_curModel->name != "DS2430")
 		return true;
@@ -423,9 +441,11 @@ int DallasEPROM::scratchWrite(uint8_t* data, int length, unsigned int address) {
 		_wire->reset();
 		_wire->select(_addr);
 		_wire->write(WRITESTATUS);
-		_wire->write(auth[0]);
-		_wire->write(auth[1]);
-		_wire->write(auth[2], 1);
+		if (_curModel->name != "DS2430"){
+			_wire->write(auth[0]);
+			_wire->write(auth[1]);
+			_wire->write(auth[2], 1);
+		}
 	}
 
 	// Need 10ms prog delay
